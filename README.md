@@ -1,1 +1,1 @@
-# bridge-sdk
+# Bridge SDK

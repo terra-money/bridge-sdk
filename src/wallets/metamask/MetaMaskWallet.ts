@@ -1,6 +1,7 @@
 import MetaMaskOnboarding from '@metamask/onboarding'
+import { BridgeType } from 'const/bridges'
 import { chainIDs, ChainType } from 'const/chains'
-import { Wallet } from '../Wallet'
+import { Tx, TxResult, Wallet } from '../Wallet'
 
 declare global {
   interface Window {
@@ -9,6 +10,8 @@ declare global {
 }
 
 export class MetaMaskWallet implements Wallet {
+  private address = ''
+
   isSupported(): boolean {
     // supported on chrome, firefox and edge (only on desktop)
     return (
@@ -23,7 +26,7 @@ export class MetaMaskWallet implements Wallet {
 
   async connect(chain: ChainType): Promise<{ address: string }> {
     if (!this.supportedChains.includes(chain)) {
-      throw new Error(`${chain} is not supported by Metamask`)
+      throw new Error(`${chain} is not supported by ${this.description.name}`)
     }
 
     if (window.ethereum?.networkVersion !== chainIDs[chain]) {
@@ -40,13 +43,54 @@ export class MetaMaskWallet implements Wallet {
 
     const method = 'eth_requestAccounts'
     const accounts = await window.ethereum?.request({ method })
-    const address = (accounts && accounts[0]) || ''
+    this.address = (accounts && accounts[0]) || ''
 
-    return { address }
+    return { address: this.address }
+  }
+
+  async transfer(tx: Tx): Promise<TxResult> {
+    if (!this.address) {
+      return {
+        success: false,
+        error: `You must connect the wallet before the transfer`,
+      }
+    }
+    if (!this.supportedChains.includes(tx.src)) {
+      return {
+        success: false,
+        error: `${tx.src} is not supported by ${this.description.name}`,
+      }
+    }
+    if (tx.src === tx.dst) {
+      return {
+        success: false,
+        error: `Source chain and destination chain must be different`,
+      }
+    }
+
+    switch(tx.bridge) {
+      case BridgeType.ibc:
+        // not supported by EVM chains
+        return {
+          success: false,
+          error: 'IBC is not supported by EVM chains, choose a different bridge type'
+        }
+      case BridgeType.axelar:
+      case BridgeType.wormhole:
+        // TODO: integrate axelar and wormhole
+        return {
+          success: false,
+          error: 'axelar and wormhole are not yet integrated on Metamask'
+        }
+    }
   }
 
   // TODO: support connection with Terra, and other cosmos sdk chains
   supportedChains = [ChainType.ethereum]
 
-  installLink = 'https://metamask.io/'
+  description = {
+    name: 'MetaMask',
+    icon: 'TBD',
+    installLink: 'https://metamask.io/',
+  }
 }
