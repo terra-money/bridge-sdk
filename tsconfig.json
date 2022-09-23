@@ -25,6 +25,7 @@
     "strictFunctionTypes": true,
     "strictNullChecks": true,
     "strictPropertyInitialization": true,
+    "resolveJsonModule": true,
     "target": "es5",
     "paths": {
       "*": ["src/*"]

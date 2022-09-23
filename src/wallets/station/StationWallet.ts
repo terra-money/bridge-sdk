@@ -6,6 +6,7 @@ import {
 } from '@terra-money/terra.js'
 import { BridgeType } from 'const/bridges'
 import { ChainType, ibcChannels } from 'const/chains'
+import { getAxelarDepositAddress } from 'packages/axelar'
 import { Tx, TxResult, Wallet } from '../Wallet'
 
 const ext = new Extension()
@@ -92,8 +93,12 @@ export class StationWallet implements Wallet {
         }
 
       case BridgeType.axelar:
-        // TODO: get deposit address with axelar SDK
-        const depositAddress = ''
+        const depositAddress = await getAxelarDepositAddress(tx.address, tx.src, tx.dst, tx.coin.denom)
+
+        if(!depositAddress) return {
+          success: false,
+          error: 'Can\'t generate the Axelar deposit address'
+        }
 
         const axlTx: CreateTxOptions = {
           msgs: [
@@ -134,9 +139,8 @@ export class StationWallet implements Wallet {
   supportedChains = [ChainType.terra]
 
   description = {
-    name: 'Station',
-    icon: 'TBD',
-    installLink:
-      'https://chrome.google.com/webstore/detail/terra-station-wallet/aiifbnbfobpmeekipheeijimdpnlpgpp',
+    name: 'Terra Station',
+    icon: 'https://assets.terra.money/icon/station-extension/icon.png',
+    installLink: 'https://setup-station.terra.money/',
   }
 }

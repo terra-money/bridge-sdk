@@ -3,6 +3,7 @@ import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx.js'
 import { BridgeType } from 'const/bridges'
 import { ChainType, chainIDs, ibcChannels } from 'const/chains'
 import { Tx, TxResult, Wallet } from '../Wallet'
+import { getAxelarDepositAddress } from 'packages/axelar'
 
 type KeplrChain = ChainType.cosmos | ChainType.osmosis
 
@@ -115,9 +116,13 @@ export class KeplrWallet implements Wallet {
           }
         }
 
-        // TODO: get axelar deposit address
-        const axlAddress = ''
+        const axlAddress = await getAxelarDepositAddress(tx.address, tx.src, tx.dst, tx.coin.denom)
 
+        if(!axlAddress) return {
+          success: false,
+          error: 'Can\'t generate the Axelar deposit address'
+        }
+        
         msgs.push({
           typeUrl: '/ibc.applications.transfer.v1.MsgTransfer',
           value: {

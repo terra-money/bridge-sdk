@@ -1,7 +1,10 @@
 import MetaMaskOnboarding from '@metamask/onboarding'
 import { BridgeType } from 'const/bridges'
 import { chainIDs, ChainType } from 'const/chains'
+import { getAxelarDepositAddress } from 'packages/axelar'
 import { Tx, TxResult, Wallet } from '../Wallet'
+import { ethers } from 'ethers'
+import abi from './abi.json'
 
 declare global {
   interface Window {
@@ -68,19 +71,42 @@ export class MetaMaskWallet implements Wallet {
       }
     }
 
-    switch(tx.bridge) {
+    switch (tx.bridge) {
+      case BridgeType.axelar:
+        const axlAddress = await getAxelarDepositAddress(
+          tx.address,
+          tx.src,
+          tx.dst,
+          tx.coin.denom,
+        )
+
+        if (!axlAddress)
+          return {
+            success: false,
+            error: "Can't generate the Axelar deposit address",
+          }
+
+        const token = new ethers.Contract(tx.coin.denom, abi, window.ethereum)
+        const signer = window.ethereum.getSigner()
+        const withSigner = token.connect(signer)
+
+        const result = await withSigner.transfer(axlAddress, tx.coin.amount)
+
+        return { success: true, txhash: result.hash }
+
       case BridgeType.ibc:
         // not supported by EVM chains
         return {
           success: false,
-          error: 'IBC is not supported by EVM chains, choose a different bridge type'
+          error:
+            'IBC is not supported by EVM chains, choose a different bridge type',
         }
-      case BridgeType.axelar:
+
       case BridgeType.wormhole:
         // TODO: integrate axelar and wormhole
         return {
           success: false,
-          error: 'axelar and wormhole are not yet integrated on Metamask'
+          error: 'axelar and wormhole are not yet integrated on Metamask',
         }
     }
   }
