@@ -1,7 +1,7 @@
 import MetaMaskOnboarding from '@metamask/onboarding'
-import { BridgeType } from 'const/bridges'
-import { chainIDs, ChainType } from 'const/chains'
-import { getAxelarDepositAddress } from 'packages/axelar'
+import { BridgeType } from '../../const/bridges'
+import { chainIDs, ChainType } from '../../const/chains'
+import { getAxelarDepositAddress } from '../../packages/axelar'
 import { Tx, TxResult, Wallet } from '../Wallet'
 import { ethers } from 'ethers'
 import abi from './abi.json'
@@ -116,7 +116,7 @@ export class MetaMaskWallet implements Wallet {
 
   description = {
     name: 'MetaMask',
-    icon: 'TBD',
+    icon: 'https://assets.terra.money/bridge/metamask.png',
     installLink: 'https://metamask.io/',
   }
 }

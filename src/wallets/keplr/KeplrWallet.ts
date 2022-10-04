@@ -1,9 +1,9 @@
 import { SigningStargateClient } from '@cosmjs/stargate'
 import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx.js'
-import { BridgeType } from 'const/bridges'
-import { ChainType, chainIDs, ibcChannels } from 'const/chains'
+import { BridgeType } from '../../const/bridges'
+import { ChainType, chainIDs, ibcChannels } from '../../const/chains'
 import { Tx, TxResult, Wallet } from '../Wallet'
-import { getAxelarDepositAddress } from 'packages/axelar'
+import { getAxelarDepositAddress } from '../../packages/axelar'
 
 type KeplrChain = ChainType.cosmos | ChainType.osmosis
 
@@ -23,10 +23,10 @@ export class KeplrWallet implements Wallet {
   private signer: SigningStargateClient | null = null
 
   isSupported(): boolean {
-    // supported on chrome and edge (only on desktop)
+    // supported on chrome, edge and firefox (only on desktop)
     return (
       !navigator.userAgent.match(/Android|iPhone/i) &&
-      !!navigator.userAgent.match(/chrome|chromium|edg/i)
+      !!navigator.userAgent.match(/chrome|chromium|firefox|edg/i)
     )
   }
 
@@ -176,7 +176,7 @@ export class KeplrWallet implements Wallet {
 
   description = {
     name: 'Keplr',
-    icon: 'TBD',
+    icon: 'https://assets.terra.money/bridge/keplr.png',
     installLink: 'https://www.keplr.app/',
   }
 }

@@ -1,4 +1,4 @@
-import { ChainType } from 'const/chains'
+import { ChainType } from '../const/chains'
 import { bech32 } from 'bech32'
 import { ethers } from 'ethers'
 

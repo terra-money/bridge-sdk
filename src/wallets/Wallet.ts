@@ -1,24 +1,26 @@
-import { BridgeType } from 'const/bridges'
-import { ChainType } from 'const/chains'
+import { BridgeType } from '../const/bridges'
+import { ChainType } from '../const/chains'
 
 export interface Tx {
-  src: ChainType,
-  dst: ChainType,
-  bridge: BridgeType,
-  address: string,
+  src: ChainType
+  dst: ChainType
+  bridge: BridgeType
+  address: string
   coin: {
-    amount: number,
-    denom: string,
+    amount: number
+    denom: string
   }
 }
 
-export type TxResult = {
-  success: true,
-  txhash: string,
-} | {
-  success: false,
-  error: string,
-}
+export type TxResult =
+  | {
+      success: true
+      txhash: string
+    }
+  | {
+      success: false
+      error: string
+    }
 
 export interface Wallet {
   isSupported(): boolean
@@ -28,9 +30,9 @@ export interface Wallet {
 
   supportedChains: ChainType[]
   description: {
-    name: string,
-    icon: string,
-    installLink: string,
+    name: string
+    icon: string
+    installLink: string
   }
 
   // TODO:

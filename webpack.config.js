@@ -1,5 +1,5 @@
-const webpack = require('webpack');
-const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
+const webpack = require('webpack')
+const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin')
 // const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 const commonConfig = {
@@ -20,7 +20,7 @@ const commonConfig = {
     plugins: [new TsconfigPathsPlugin()],
   },
   plugins: [],
-};
+}
 
 const webConfig = {
   ...commonConfig,
@@ -34,7 +34,9 @@ const webConfig = {
     ...commonConfig.resolve,
     fallback: {
       stream: require.resolve('stream-browserify'),
+      crypto: require.resolve('crypto-browserify'),
       buffer: require.resolve('buffer'),
+      path: require.resolve('path-browserify'),
     },
   },
   plugins: [
@@ -45,9 +47,8 @@ const webConfig = {
     new webpack.ProvidePlugin({
       process: 'process/browser',
     }),
-    // new BundleAnalyzerPlugin(),
   ],
-};
+}
 
 const nodeConfig = {
   ...commonConfig,
@@ -56,6 +57,6 @@ const nodeConfig = {
     libraryTarget: 'commonjs',
     filename: 'bundle.node.js',
   },
-};
+}
 
-module.exports = [webConfig, nodeConfig];
+module.exports = [webConfig]

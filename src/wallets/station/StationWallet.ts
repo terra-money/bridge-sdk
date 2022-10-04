@@ -4,9 +4,9 @@ import {
   Extension,
   MsgTransfer,
 } from '@terra-money/terra.js'
-import { BridgeType } from 'const/bridges'
-import { ChainType, ibcChannels } from 'const/chains'
-import { getAxelarDepositAddress } from 'packages/axelar'
+import { BridgeType } from '../../const/bridges'
+import { ChainType, ibcChannels } from '../../const/chains'
+import { getAxelarDepositAddress } from '../../packages/axelar'
 import { Tx, TxResult, Wallet } from '../Wallet'
 
 const ext = new Extension()
@@ -140,7 +140,7 @@ export class StationWallet implements Wallet {
 
   description = {
     name: 'Terra Station',
-    icon: 'https://assets.terra.money/icon/station-extension/icon.png',
+    icon: 'https://assets.terra.money/bridge/station.png',
     installLink: 'https://setup-station.terra.money/',
   }
 }

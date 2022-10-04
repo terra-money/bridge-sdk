@@ -1,7 +1,7 @@
 import { AxelarAssetTransfer, Environment } from '@axelar-network/axelarjs-sdk'
 import axios from 'axios'
 
-import { ChainType } from 'const/chains'
+import { ChainType } from '../const/chains'
 
 const sdk = new AxelarAssetTransfer({
   environment: Environment.MAINNET,
