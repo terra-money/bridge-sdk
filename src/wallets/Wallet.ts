@@ -22,10 +22,23 @@ export type TxResult =
       error: string
     }
 
+export type QueryResult<T> =
+  | {
+      success: true
+      data: T
+    }
+  | {
+      success: false
+      error: string
+    }
+
 export interface Wallet {
   isSupported(): boolean
   isInstalled(): boolean
   connect(chain: ChainType): Promise<{ address: string }>
+  getBalance(
+    token: string,
+  ): Promise<QueryResult<number>>
   transfer(tx: Tx): Promise<TxResult>
 
   supportedChains: ChainType[]

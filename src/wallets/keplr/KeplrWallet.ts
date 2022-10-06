@@ -2,14 +2,14 @@ import { SigningStargateClient } from '@cosmjs/stargate'
 import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx.js'
 import { BridgeType } from '../../const/bridges'
 import { ChainType, chainIDs, ibcChannels } from '../../const/chains'
-import { Tx, TxResult, Wallet } from '../Wallet'
+import { QueryResult, Tx, TxResult, Wallet } from '../Wallet'
 import { getAxelarDepositAddress } from '../../packages/axelar'
 
 type KeplrChain = ChainType.cosmos | ChainType.osmosis
 
 const keplrRpc: Record<KeplrChain, string> = {
-  [ChainType.cosmos]: 'https://rpc-cosmoshub-ia.notional.ventures/',
-  [ChainType.osmosis]: '',
+  [ChainType.cosmos]: 'https://cosmos-mainnet-rpc.allthatnode.com:26657/',
+  [ChainType.osmosis]: 'https://rpc.osmosis.zone/',
 }
 
 declare global {
@@ -21,6 +21,7 @@ declare global {
 export class KeplrWallet implements Wallet {
   private address: string = ''
   private signer: SigningStargateClient | null = null
+  private chain: ChainType | null = null
 
   isSupported(): boolean {
     // supported on chrome, edge and firefox (only on desktop)
@@ -46,6 +47,7 @@ export class KeplrWallet implements Wallet {
     const accounts = await keplrOfflineSigner.getAccounts()
 
     this.address = accounts[0].address
+    this.chain = chain
     this.signer = await SigningStargateClient.connectWithSigner(
       rpc || keplrRpc[chain as KeplrChain],
       keplrOfflineSigner,
@@ -61,6 +63,23 @@ export class KeplrWallet implements Wallet {
     return { address: accounts[0].address }
   }
 
+  async getBalance(
+    token: string,
+  ): Promise<QueryResult<number>> {
+    if (!this.signer) {
+      return {
+        success: false,
+        error: `You must connect the wallet before the query`,
+      }
+    }
+
+    const res = await this.signer.getBalance(this.address, token)
+    return {
+      success: true,
+      data: parseInt(res.amount),
+    }
+  }
+
   async transfer(tx: Tx): Promise<TxResult> {
     if (!this.address || !this.signer) {
       return {
@@ -68,10 +87,10 @@ export class KeplrWallet implements Wallet {
         error: `You must connect the wallet before the transfer`,
       }
     }
-    if (!this.supportedChains.includes(tx.src)) {
+    if (tx.src !== this.chain) {
       return {
         success: false,
-        error: `${tx.src} is not supported by ${this.description.name}`,
+        error: `You must connect to ${tx.src} before the transfer`,
       }
     }
     if (tx.src === tx.dst) {

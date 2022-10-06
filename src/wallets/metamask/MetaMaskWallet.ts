@@ -2,7 +2,7 @@ import MetaMaskOnboarding from '@metamask/onboarding'
 import { BridgeType } from '../../const/bridges'
 import { chainIDs, ChainType } from '../../const/chains'
 import { getAxelarDepositAddress } from '../../packages/axelar'
-import { Tx, TxResult, Wallet } from '../Wallet'
+import { QueryResult, Tx, TxResult, Wallet } from '../Wallet'
 import { ethers } from 'ethers'
 import abi from './abi'
 
@@ -25,6 +25,26 @@ export class MetaMaskWallet implements Wallet {
 
   isInstalled(): boolean {
     return MetaMaskOnboarding.isMetaMaskInstalled()
+  }
+
+  async getBalance(
+    token: string,
+  ): Promise<QueryResult<number>> {
+    if (!this.address) {
+      return {
+        success: false,
+        error: `You must connect the wallet before the query`,
+      }
+    }
+
+    const contract = new ethers.Contract(token, abi, window.ethereum)
+
+    const result = await contract.balanceOf(this.address)
+
+    return {
+      success: true,
+      data: result.toNumber(),
+    }
   }
 
   async connect(chain: ChainType): Promise<{ address: string }> {

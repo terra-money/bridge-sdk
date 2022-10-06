@@ -2,12 +2,13 @@ import {
   Coin,
   CreateTxOptions,
   Extension,
+  LCDClient,
   MsgTransfer,
 } from '@terra-money/terra.js'
 import { BridgeType } from '../../const/bridges'
 import { ChainType, ibcChannels } from '../../const/chains'
 import { getAxelarDepositAddress } from '../../packages/axelar'
-import { Tx, TxResult, Wallet } from '../Wallet'
+import { QueryResult, Tx, TxResult, Wallet } from '../Wallet'
 
 const ext = new Extension()
 
@@ -35,6 +36,47 @@ export class StationWallet implements Wallet {
 
     this.address = res.address
     return res
+  }
+
+  async getBalance(
+    token: string,
+  ): Promise<QueryResult<number>> {
+    if (!this.address) {
+      return {
+        success: false,
+        error: `You must connect the wallet before the query`,
+      }
+    }
+
+    const lcd = new LCDClient({
+      URL: 'https://phoenix-lcd.terra.dev',
+      chainID: 'phoenix-1',
+    })
+
+    if (token.startsWith('terra1')) {
+      const result = (await lcd.wasm.contractQuery(token, {
+        balance: {
+          address: this.address,
+        },
+      })) as {
+        data: {
+          balance: string
+        }
+      }
+
+      return {
+        success: true,
+        data: parseInt(result.data.balance),
+      }
+    } else {
+      const result = await lcd.bank.balance(this.address)
+      const coin = result[0].get(token)
+
+      return {
+        success: true,
+        data: coin?.amount?.toNumber() || 0,
+      }
+    }
   }
 
   async transfer(tx: Tx): Promise<TxResult> {
@@ -93,12 +135,18 @@ export class StationWallet implements Wallet {
         }
 
       case BridgeType.axelar:
-        const depositAddress = await getAxelarDepositAddress(tx.address, tx.src, tx.dst, tx.coin.denom)
+        const depositAddress = await getAxelarDepositAddress(
+          tx.address,
+          tx.src,
+          tx.dst,
+          tx.coin.denom,
+        )
 
-        if(!depositAddress) return {
-          success: false,
-          error: 'Can\'t generate the Axelar deposit address'
-        }
+        if (!depositAddress)
+          return {
+            success: false,
+            error: "Can't generate the Axelar deposit address",
+          }
 
         const axlTx: CreateTxOptions = {
           msgs: [
