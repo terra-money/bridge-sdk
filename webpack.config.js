@@ -1,6 +1,5 @@
 const webpack = require('webpack')
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin')
-// const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 const commonConfig = {
   mode: 'production',
@@ -9,7 +8,7 @@ const commonConfig = {
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
+        test: /\.ts$/,
         use: 'ts-loader',
         exclude: /node_modules/,
       },
@@ -26,7 +25,7 @@ const webConfig = {
   ...commonConfig,
   target: 'web',
   output: {
-    filename: 'bundle.js',
+    filename: 'index.js',
     libraryTarget: 'umd',
     library: 'Terra',
   },
@@ -34,8 +33,8 @@ const webConfig = {
     ...commonConfig.resolve,
     fallback: {
       stream: require.resolve('stream-browserify'),
-      crypto: require.resolve('crypto-browserify'),
       buffer: require.resolve('buffer'),
+      crypto: require.resolve('crypto-browserify'),
       path: require.resolve('path-browserify'),
     },
   },
@@ -48,15 +47,6 @@ const webConfig = {
       process: 'process/browser',
     }),
   ],
-}
-
-const nodeConfig = {
-  ...commonConfig,
-  target: 'node',
-  output: {
-    libraryTarget: 'commonjs',
-    filename: 'bundle.node.js',
-  },
 }
 
 module.exports = [webConfig]

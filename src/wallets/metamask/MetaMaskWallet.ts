@@ -4,7 +4,7 @@ import { chainIDs, ChainType } from '../../const/chains'
 import { getAxelarDepositAddress } from '../../packages/axelar'
 import { Tx, TxResult, Wallet } from '../Wallet'
 import { ethers } from 'ethers'
-import abi from './abi.json'
+import abi from './abi'
 
 declare global {
   interface Window {
