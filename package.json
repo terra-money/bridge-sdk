@@ -1,5 +1,5 @@
 {
-  "name": "bridge-sdk",
+  "name": "@terra-money/bridge-sdk",
   "version": "1.0.0-beta.1",
   "description": "",
   "main": "dist/index.js",
