@@ -9,7 +9,7 @@ npm i @terra-money/bridge-sdk
 
 Connect station:
 ```js
-import { StationWallet, ChainType, BridgeType, isValidAddress } from 'bridge-sdk'
+import { StationWallet, ChainType, BridgeType, isValidAddress } from '@terra-money/bridge-sdk'
 
 const wallet = new StationWallet()
 
