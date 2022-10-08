@@ -26,6 +26,9 @@ wallet
   .then(({ address }) => console.log(address))
 ```
 
+> If you are using `TerraLedgerWallet` you can specify more options on the connect function, to select a custom derivation index (default is 0) and to use bluetooth (default is USB)
+ 
+
 Get the balance (wallet must be already connected):
 ```js
 wallet
@@ -67,9 +70,10 @@ wallet
   })
 ```
 
-> You can use the same functions on the `KeplrWallet` and `MetaMaskWallet` to send a tx from those wallets
+> You can use the same functions on the `TerraLedgerWallet`,`KeplrWallet` and `MetaMaskWallet` to send a tx from those wallets
 > 
 > You can find more info about the available functions on the [Wallet inteface](/src/wallets/Wallet.ts#25)
+
 
 
 ## Coming soon

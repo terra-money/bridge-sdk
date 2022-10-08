@@ -5,6 +5,7 @@ import './index.css'
 import Keplr from './Keplr'
 import Metamask from './Metamask'
 import Station from './Station'
+import LedgerTerra from './LedgerTerra'
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 root.render(
@@ -14,6 +15,7 @@ root.render(
       <a href='https://github.com/terra-money/bridge-sdk' target='_blank' rel='noreferrer'>GitHub</a>
     </header>
     <Station />
+    <LedgerTerra />
     <Keplr />
     <Metamask />
   </React.StrictMode>,
