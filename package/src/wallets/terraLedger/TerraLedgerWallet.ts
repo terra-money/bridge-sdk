@@ -2,16 +2,17 @@ import {
   Coin,
   CreateTxOptions,
   LCDClient,
+  MsgExecuteContract,
   MsgTransfer,
   Wallet,
 } from '@terra-money/terra.js'
-import { LedgerKey } from "@terra-money/ledger-terra-js"
-import BluetoothTransport from "@ledgerhq/hw-transport-web-ble"
+import { LedgerKey } from '@terra-money/ledger-terra-js'
+import BluetoothTransport from '@ledgerhq/hw-transport-web-ble'
 import { BridgeType } from '../../const/bridges'
-import { ChainType, ibcChannels } from '../../const/chains'
+import { ChainType, ibcChannels, ics20Channels } from '../../const/chains'
 import { getAxelarDepositAddress } from '../../packages/axelar'
 import { QueryResult, Tx, TxResult, Wallet as WalletInterface } from '../Wallet'
-
+import { isValidAddress } from '../../util/address'
 
 export class TerraLedgerWallet implements WalletInterface {
   private address: string = ''
@@ -29,7 +30,10 @@ export class TerraLedgerWallet implements WalletInterface {
     return true
   }
 
-  async connect(chain: ChainType, options?: { index?: number, bluetooth?: boolean }): Promise<{ address: string }> {
+  async connect(
+    chain: ChainType,
+    options?: { index?: number; bluetooth?: boolean },
+  ): Promise<{ address: string }> {
     if (!this.supportedChains.includes(chain)) {
       throw new Error(`${chain} is not supported by ${this.description.name}`)
     }
@@ -46,9 +50,7 @@ export class TerraLedgerWallet implements WalletInterface {
     return { address }
   }
 
-  async getBalance(
-    token: string,
-  ): Promise<QueryResult<number>> {
+  async getBalance(token: string): Promise<QueryResult<number>> {
     if (!this.address) {
       return {
         success: false,
@@ -123,7 +125,6 @@ export class TerraLedgerWallet implements WalletInterface {
           }
         }
 
-
         const ibcTx: CreateTxOptions = {
           msgs: [
             new MsgTransfer(
@@ -139,12 +140,102 @@ export class TerraLedgerWallet implements WalletInterface {
           ],
         }
 
-        const ibcRes = await lcd.tx.broadcastSync(await wallet.createAndSignTx(ibcTx))
+        const ibcRes = await lcd.tx.broadcastSync(
+          await wallet.createAndSignTx(ibcTx),
+        )
 
         return {
           success: !!ibcRes.height,
           txhash: ibcRes.txhash,
           error: ibcRes.raw_log,
+        }
+
+      case BridgeType.ics20:
+        if (tx.coin.denom.startsWith('ibc/')) {
+          // we are transfering an cw20 token (as an ibc coin) from the counterparty back to the origin
+          // ibc (counterparty) -> ibc transfer -> cw20 (origin)
+          let chainConfig = ics20Channels[tx.dst]
+          let channelConfig = chainConfig?.channels[tx.src]
+
+          if (!chainConfig || !channelConfig || !channelConfig.counterparty) {
+            return {
+              success: false,
+              error: `One of the chains is not supported by ICS20, select a different bridge`,
+            }
+          }
+
+          const ibcTx: CreateTxOptions = {
+            msgs: [
+              new MsgTransfer(
+                'transfer',
+                channelConfig.counterparty,
+                new Coin(tx.coin.denom, tx.coin.amount),
+                this.address,
+                tx.address,
+                undefined,
+                (Date.now() + 120 * 1000) * 1e6,
+              ),
+            ],
+          }
+
+          const ibcRes = await lcd.tx.broadcastSync(
+            await wallet.createAndSignTx(ibcTx),
+          )
+
+          return {
+            success: !!ibcRes.height,
+            txhash: ibcRes.txhash,
+            error: ibcRes.raw_log,
+          }
+        } else if (isValidAddress(tx.coin.denom, tx.src)) {
+          // we are transfering an cw20 token to another chain
+          // cw20 (origin) -> through contract -> ibc (counterparty)
+          let chainConfig = ics20Channels[tx.src]
+          let channelConfig = chainConfig?.channels[tx.dst]
+          if (!chainConfig || !channelConfig) {
+            return {
+              success: false,
+              error: `One of the chains is not supported by ICS-20, select a different bridge`,
+            }
+          }
+
+          const ics20Tx: CreateTxOptions = {
+            msgs: [
+              new MsgExecuteContract(
+                this.address,
+                tx.coin.denom,
+                {
+                  send: {
+                    contract: chainConfig.contract,
+                    amount: tx.coin.amount,
+                    msg: Buffer.from(
+                      JSON.stringify({
+                        channel: channelConfig.origin,
+                        remote_address: tx.address,
+                        timeout: 120,
+                      }),
+                      'base64',
+                    ),
+                  },
+                },
+                undefined,
+              ),
+            ],
+          }
+          const icsRes = await lcd.tx.broadcastSync(
+            await wallet.createAndSignTx(ics20Tx),
+          )
+
+          return {
+            success: !!icsRes.height,
+            txhash: icsRes.txhash,
+            error: icsRes.raw_log,
+          }
+        } else {
+          return {
+            success: false,
+            error: `One of the assets is not supported by ICS-20, select a different bridge`,
+          }
         }
 
       case BridgeType.axelar:
@@ -176,7 +267,9 @@ export class TerraLedgerWallet implements WalletInterface {
           ],
         }
 
-        const res = await lcd.tx.broadcastSync(await wallet.createAndSignTx(axlTx))
+        const res = await lcd.tx.broadcastSync(
+          await wallet.createAndSignTx(axlTx),
+        )
 
         return {
           success: !!res.height,

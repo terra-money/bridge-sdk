@@ -3,10 +3,12 @@ import {
   CreateTxOptions,
   Extension,
   LCDClient,
+  MsgExecuteContract,
   MsgTransfer,
 } from '@terra-money/terra.js'
+import { isValidAddress } from '../../util/address'
 import { BridgeType } from '../../const/bridges'
-import { ChainType, ibcChannels } from '../../const/chains'
+import { ChainType, ibcChannels, ics20Channels } from '../../const/chains'
 import { getAxelarDepositAddress } from '../../packages/axelar'
 import { QueryResult, Tx, TxResult, Wallet } from '../Wallet'
 
@@ -38,9 +40,7 @@ export class StationWallet implements Wallet {
     return res
   }
 
-  async getBalance(
-    token: string,
-  ): Promise<QueryResult<number>> {
+  async getBalance(token: string): Promise<QueryResult<number>> {
     if (!this.address) {
       return {
         success: false,
@@ -132,6 +132,110 @@ export class StationWallet implements Wallet {
           success: ibcRes.success,
           txhash: ibcRes.result?.txhash,
           error: ibcRes.error?.message,
+        }
+
+      case BridgeType.ics20:
+        if (tx.coin.denom.startsWith('ibc/')) {
+          // we are transfering an cw20 token (as an ibc coin) from the counterparty back to the origin
+          // ibc (counterparty) -> ibc transfer -> cw20 (origin)
+          let chainConfig = ics20Channels[tx.dst]
+          let channelConfig = chainConfig?.channels[tx.src]
+
+          if (!chainConfig || !channelConfig || !channelConfig.counterparty) {
+            return {
+              success: false,
+              error: `One of the chains is not supported by ICS20, select a different bridge`,
+            }
+          }
+
+          const ibcTx: CreateTxOptions = {
+            msgs: [
+              new MsgTransfer(
+                'transfer',
+                channelConfig.counterparty,
+                new Coin(tx.coin.denom, tx.coin.amount),
+                this.address,
+                tx.address,
+                undefined,
+                (Date.now() + 120 * 1000) * 1e6,
+              ),
+            ],
+          }
+
+          let isClassic = false
+          const ibcRes = (
+            await ext.request('post', {
+              msgs: ibcTx.msgs.map((a) => a.toJSON(isClassic)),
+            })
+          ).payload as any
+
+          console.log(
+            '🚀 ~ file: StationWallet.ts ~ line 170 ~ StationWallet ~ transfer ~ ibcRes',
+            ibcRes,
+          )
+
+          return {
+            success: ibcRes.success,
+            txhash: ibcRes.result?.txhash,
+            error: ibcRes.error?.message,
+          }
+        } else if (isValidAddress(tx.coin.denom, tx.src)) {
+          // we are transfering an cw20 token to another chain
+          // cw20 (origin) -> through contract -> ibc (counterparty)
+          let chainConfig = ics20Channels[tx.src]
+          let channelConfig = chainConfig?.channels[tx.dst]
+          if (!chainConfig || !channelConfig) {
+            return {
+              success: false,
+              error: `One of the chains is not supported by ICS-20, select a different bridge`,
+            }
+          }
+
+          const icsTx: CreateTxOptions = {
+            msgs: [
+              new MsgExecuteContract(
+                this.address,
+                tx.coin.denom,
+                {
+                  send: {
+                    contract: chainConfig.contract,
+                    amount: tx.coin.amount.toFixed(0),
+                    msg: Buffer.from(
+                      JSON.stringify({
+                        channel: channelConfig.origin,
+                        remote_address: tx.address,
+                        timeout: 120,
+                      }),
+                    ).toString('base64'),
+                  },
+                },
+                undefined,
+              ),
+            ],
+          }
+
+          let isClassic = false
+          const icsRes = (
+            await ext.request('post', {
+              msgs: icsTx.msgs.map((a) => a.toJSON(isClassic)),
+            })
+          ).payload as any
+
+          console.log(
+            '🚀 ~ file: StationWallet.ts ~ line 218 ~ StationWallet ~ transfer ~ icsRes',
+            icsRes,
+          )
+
+          return {
+            success: icsRes.success,
+            txhash: icsRes.result?.txhash,
+            error: icsRes.error?.message,
+          }
+        } else {
+          return {
+            success: false,
+            error: `One of the assets is not supported by ICS-20, select a different bridge`,
+          }
         }
 
       case BridgeType.axelar:

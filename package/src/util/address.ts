@@ -7,6 +7,8 @@ export const addressPrefix: Record<ChainType, string> = {
   [ChainType.terra]: 'terra1',
   [ChainType.cosmos]: 'cosmos1',
   [ChainType.osmosis]: 'osmo1',
+  [ChainType.kujira]: 'kujira1',
+  [ChainType.juno]: 'juno1',
 }
 
 export function isValidAddress(address: string, chain: ChainType): boolean {
