@@ -52,6 +52,18 @@ export default function LedgerTerraWallet() {
           >
             Connect
           </button>
+
+          <button
+            onClick={async () => {
+              setAddress((await wallet.connect(ChainType.terra, { bluetooth: true })).address)
+              const balResult = await wallet.getBalance('uluna')
+              if (balResult.success) {
+                setBalance(balResult.data)
+              }
+            }}
+          >
+            Connect Bluetooth
+          </button>
         </>
       )}
     </section>

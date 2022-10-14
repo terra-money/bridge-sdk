@@ -115,7 +115,6 @@ export class TerraLedgerWallet implements WalletInterface {
 
     switch (tx.bridge) {
       case BridgeType.ibc:
-        // @ts-expect-error
         if (!ibcChannels[tx.src]?.[tx.dst]) {
           return {
             success: false,
@@ -128,7 +127,6 @@ export class TerraLedgerWallet implements WalletInterface {
           msgs: [
             new MsgTransfer(
               'transfer',
-              // @ts-expect-error
               ibcChannels[tx.src][tx.dst],
               new Coin(tx.coin.denom, tx.coin.amount),
               this.address,
@@ -165,7 +163,6 @@ export class TerraLedgerWallet implements WalletInterface {
           msgs: [
             new MsgTransfer(
               'transfer',
-              // @ts-expect-error
               ibcChannels[tx.src]?.axelar,
               new Coin(tx.coin.denom, tx.coin.amount),
               this.address,
