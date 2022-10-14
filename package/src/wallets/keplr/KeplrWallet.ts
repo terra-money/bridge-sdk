@@ -118,7 +118,6 @@ export class KeplrWallet implements Wallet {
 
     switch (tx.bridge) {
       case BridgeType.ibc:
-        // @ts-expect-error
         if (!ibcChannels[tx.src]?.[tx.dst]) {
           return {
             success: false,
@@ -130,7 +129,6 @@ export class KeplrWallet implements Wallet {
           typeUrl: '/ibc.applications.transfer.v1.MsgTransfer',
           value: {
             sourcePort: 'transfer',
-            // @ts-expect-error
             sourceChannel: ibcChannels[tx.src][tx.dst],
             sender: this.address,
             receiver: tx.address,
@@ -220,7 +218,6 @@ export class KeplrWallet implements Wallet {
         }
 
       case BridgeType.axelar:
-        // @ts-expect-error
         if (!ibcChannels[tx.src]?.axelar) {
           return {
             success: false,
@@ -245,7 +242,6 @@ export class KeplrWallet implements Wallet {
           typeUrl: '/ibc.applications.transfer.v1.MsgTransfer',
           value: {
             sourcePort: 'transfer',
-            // @ts-expect-error
             sourceChannel: ibcChannels[tx.src].axelar,
             sender: this.address,
             receiver: axlAddress,

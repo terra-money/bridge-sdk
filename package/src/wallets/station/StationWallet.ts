@@ -101,7 +101,6 @@ export class StationWallet implements Wallet {
 
     switch (tx.bridge) {
       case BridgeType.ibc:
-        // @ts-expect-error
         if (!ibcChannels[tx.src]?.[tx.dst]) {
           return {
             success: false,
@@ -113,7 +112,6 @@ export class StationWallet implements Wallet {
           msgs: [
             new MsgTransfer(
               'transfer',
-              // @ts-expect-error
               ibcChannels[tx.src][tx.dst],
               new Coin(tx.coin.denom, tx.coin.amount),
               this.address,
@@ -256,7 +254,6 @@ export class StationWallet implements Wallet {
           msgs: [
             new MsgTransfer(
               'transfer',
-              // @ts-expect-error
               ibcChannels[tx.src]?.axelar,
               new Coin(tx.coin.denom, tx.coin.amount),
               this.address,

@@ -19,7 +19,10 @@ export const chainIDs: Record<ChainType, string> = {
   [ChainType.juno]: 'juno-1',
 }
 
-export const ibcChannels = {
+export const ibcChannels: Record<
+  string,
+  Record<string | BridgeType.axelar, string>
+> = {
   [ChainType.terra]: {
     [ChainType.cosmos]: 'channel-0',
     [ChainType.osmosis]: 'channel-1',
