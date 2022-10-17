@@ -44,7 +44,9 @@ export default function Metamask() {
           <button
             onClick={async () => {
               setAddress((await wallet.connect(ChainType.ethereum)).address)
-              const balResult = await wallet.getBalance('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')
+              const balResult = await wallet.getBalance(
+                '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+              )
               if (balResult.success) {
                 setBalance(balResult.data)
               }

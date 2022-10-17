@@ -36,9 +36,7 @@ export interface Wallet {
   isSupported(): boolean
   isInstalled(): boolean
   connect(chain: ChainType): Promise<{ address: string }>
-  getBalance(
-    token: string,
-  ): Promise<QueryResult<number>>
+  getBalance(token: string): Promise<QueryResult<number>>
   transfer(tx: Tx): Promise<TxResult>
 
   supportedChains: ChainType[]
