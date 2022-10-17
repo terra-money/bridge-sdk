@@ -27,9 +27,7 @@ export class MetaMaskWallet implements Wallet {
     return MetaMaskOnboarding.isMetaMaskInstalled()
   }
 
-  async getBalance(
-    token: string,
-  ): Promise<QueryResult<number>> {
+  async getBalance(token: string): Promise<QueryResult<number>> {
     if (!this.address) {
       return {
         success: false,
@@ -120,6 +118,14 @@ export class MetaMaskWallet implements Wallet {
           success: false,
           error:
             'IBC is not supported by EVM chains, choose a different bridge type',
+        }
+
+      case BridgeType.ics20:
+        // not supported by EVM chains
+        return {
+          success: false,
+          error:
+            'ICS20 is not supported by EVM chains, choose a different bridge type',
         }
 
       case BridgeType.wormhole:

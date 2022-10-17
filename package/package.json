@@ -1,6 +1,6 @@
 {
   "name": "@terra-money/bridge-sdk",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0-beta.4",
   "description": "",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -40,6 +40,7 @@
   },
   "dependencies": {
     "@axelar-network/axelarjs-sdk": "^0.11.4",
+    "@cosmjs/cosmwasm-stargate": "^0.29.2",
     "@cosmjs/stargate": "^0.28.11",
     "@ledgerhq/hw-transport-web-ble": "^6.27.6",
     "@metamask/onboarding": "^1.0.1",

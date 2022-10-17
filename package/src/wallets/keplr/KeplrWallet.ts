@@ -1,15 +1,30 @@
 import { SigningStargateClient } from '@cosmjs/stargate'
+import { wasmTypes } from '@cosmjs/cosmwasm-stargate/build/modules/wasm/messages'
 import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx.js'
+import { MsgTransfer } from 'cosmjs-types/ibc/applications/transfer/v1/tx'
 import { BridgeType } from '../../const/bridges'
-import { ChainType, chainIDs, ibcChannels } from '../../const/chains'
+import {
+  ChainType,
+  chainIDs,
+  ibcChannels,
+  ics20Channels,
+} from '../../const/chains'
 import { QueryResult, Tx, TxResult, Wallet } from '../Wallet'
 import { getAxelarDepositAddress } from '../../packages/axelar'
+import { isValidAddress } from '../../util/address'
 
-type KeplrChain = ChainType.cosmos | ChainType.osmosis
+type KeplrChain =
+  | ChainType.cosmos
+  | ChainType.osmosis
+  | ChainType.kujira
+  | ChainType.juno
 
 const keplrRpc: Record<KeplrChain, string> = {
   [ChainType.cosmos]: 'https://cosmos-mainnet-rpc.allthatnode.com:26657/',
   [ChainType.osmosis]: 'https://rpc.osmosis.zone/',
+  [ChainType.juno]: 'https://rpc.juno.omniflix.co/',
+  // [ChainType.juno]: 'https://juno-rpc.polkachu.com/',
+  [ChainType.kujira]: 'https://rpc.kaiyo.kujira.setten.io/',
 }
 
 declare global {
@@ -51,9 +66,10 @@ export class KeplrWallet implements Wallet {
     this.signer = await SigningStargateClient.connectWithSigner(
       rpc || keplrRpc[chain as KeplrChain],
       keplrOfflineSigner,
-    ).catch(() => {
+    ).catch((e) => {
       console.error(
         'Error during the connection with the RPC, try using a different one',
+        e,
       )
       throw new Error(
         'Error during the connection with the RPC, try using a different one',
@@ -63,9 +79,7 @@ export class KeplrWallet implements Wallet {
     return { address: accounts[0].address }
   }
 
-  async getBalance(
-    token: string,
-  ): Promise<QueryResult<number>> {
+  async getBalance(token: string): Promise<QueryResult<number>> {
     if (!this.signer) {
       return {
         success: false,
@@ -118,12 +132,91 @@ export class KeplrWallet implements Wallet {
             sourceChannel: ibcChannels[tx.src][tx.dst],
             sender: this.address,
             receiver: tx.address,
-            token: tx.coin,
+            token: {
+              amount: tx.coin.amount.toFixed(0),
+              denom: tx.coin.denom,
+            },
             timeoutHeight: undefined,
             timeoutTimestamp: (Date.now() + 120 * 1000) * 1e6,
           },
         })
         break
+
+      case BridgeType.ics20:
+        if (tx.coin.denom.startsWith('ibc/')) {
+          // we are transfering an cw20 token (as an ibc coin) from the counterparty back to the origin
+          // ibc (counterparty) -> ibc transfer -> cw20 (origin)
+          let chainConfig = ics20Channels[tx.dst]
+          let channelConfig = chainConfig?.channels[tx.src]
+
+          if (!chainConfig || !channelConfig || !channelConfig.counterparty) {
+            return {
+              success: false,
+              error: `One of the chains is not supported by ICS20, select a different bridge`,
+            }
+          }
+
+          // compose MsgTransfer
+          msgs.push({
+            typeUrl: '/ibc.applications.transfer.v1.MsgTransfer',
+            value: MsgTransfer.fromPartial({
+              sourcePort: 'transfer',
+              sourceChannel: channelConfig.counterparty,
+              sender: this.address,
+              receiver: tx.address,
+              token: {
+                amount: tx.coin.amount.toFixed(0),
+                denom: tx.coin.denom,
+              },
+              timeoutHeight: undefined,
+              timeoutTimestamp: (Date.now() + 120 * 1000) * 1e6,
+            }),
+          })
+
+          break
+        } else if (isValidAddress(tx.coin.denom, tx.src)) {
+          // we are transfering an cw20 token to another chain
+          // cw20 (origin) -> through contract -> ibc (counterparty)
+          let chainConfig = ics20Channels[tx.src]
+          let channelConfig = chainConfig?.channels[tx.dst]
+          if (!chainConfig || !channelConfig) {
+            return {
+              success: false,
+              error: `One of the chains is not supported by ICS-20, select a different bridge`,
+            }
+          }
+
+          msgs.push({
+            typeUrl: '/cosmwasm.wasm.v1.MsgExecuteContract',
+            value: {
+              sender: this.address,
+              contract: tx.coin.denom,
+              msg: Buffer.from(
+                JSON.stringify({
+                  send: {
+                    contract: chainConfig.contract,
+                    amount: tx.coin.amount.toFixed(0),
+                    msg: Buffer.from(
+                      JSON.stringify({
+                        channel: channelConfig.origin,
+                        remote_address: tx.address,
+                        timeout: 120 * 5,
+                      }),
+                    ).toString('base64'),
+                  },
+                }),
+              ).toString('base64'),
+              funds: [],
+            },
+          })
+          break
+        } else {
+          return {
+            success: false,
+            error: `One of the assets is not supported by ICS-20, select a different bridge`,
+          }
+        }
+
       case BridgeType.axelar:
         if (!ibcChannels[tx.src]?.axelar) {
           return {
@@ -132,13 +225,19 @@ export class KeplrWallet implements Wallet {
           }
         }
 
-        const axlAddress = await getAxelarDepositAddress(tx.address, tx.src, tx.dst, tx.coin.denom)
+        const axlAddress = await getAxelarDepositAddress(
+          tx.address,
+          tx.src,
+          tx.dst,
+          tx.coin.denom,
+        )
 
-        if(!axlAddress) return {
-          success: false,
-          error: 'Can\'t generate the Axelar deposit address'
-        }
-        
+        if (!axlAddress)
+          return {
+            success: false,
+            error: "Can't generate the Axelar deposit address",
+          }
+
         msgs.push({
           typeUrl: '/ibc.applications.transfer.v1.MsgTransfer',
           value: {
@@ -146,7 +245,10 @@ export class KeplrWallet implements Wallet {
             sourceChannel: ibcChannels[tx.src].axelar,
             sender: this.address,
             receiver: axlAddress,
-            token: tx.coin,
+            token: {
+              amount: tx.coin.amount.toFixed(0),
+              denom: tx.coin.denom,
+            },
             timeoutHeight: undefined,
             timeoutTimestamp: (Date.now() + 120 * 1000) * 1e6,
           },
@@ -157,6 +259,10 @@ export class KeplrWallet implements Wallet {
         break
     }
 
+    for (let element of wasmTypes) {
+      this.signer.registry.register(element[0], element[1])
+    }
+
     // get account info
     const account = await this.signer.getSequence(this.address)
     // create tx
@@ -165,29 +271,34 @@ export class KeplrWallet implements Wallet {
       msgs,
       {
         amount: [],
-        gas: '150000',
+        gas: '250000',
       },
       '', // memo
       {
-        chainId: await this.signer.getChainId(),
+        chainId: chainIDs[this.chain],
         accountNumber: account.accountNumber,
         sequence: account.sequence,
-      }
+      },
     )
 
     // broadcast tx
     const result = await this.signer.broadcastTx(
-      TxRaw.encode(signedTx).finish()
+      TxRaw.encode(signedTx).finish(),
     )
-    
+
     return {
       success: !result.code,
       error: (result.code && result.rawLog) || '',
-      txhash: result.transactionHash
+      txhash: result.transactionHash,
     }
   }
 
-  supportedChains = [ChainType.osmosis, ChainType.cosmos]
+  supportedChains = [
+    ChainType.osmosis,
+    ChainType.cosmos,
+    ChainType.kujira,
+    ChainType.juno,
+  ]
 
   description = {
     name: 'Keplr',

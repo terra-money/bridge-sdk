@@ -16,6 +16,7 @@
     "noImplicitThis": true,
     "noUnusedLocals": false,
     "noUnusedParameters": true,
+    "preserveConstEnums": true,
     "outDir": "dist",
     "rootDir": "src",
     "sourceMap": true,

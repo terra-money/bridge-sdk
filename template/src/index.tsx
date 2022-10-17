@@ -12,7 +12,13 @@ root.render(
   <React.StrictMode>
     <header>
       <img src={LogoPng} alt='Bridge SDK' />
-      <a href='https://github.com/terra-money/bridge-sdk' target='_blank' rel='noreferrer'>GitHub</a>
+      <a
+        href='https://github.com/terra-money/bridge-sdk'
+        target='_blank'
+        rel='noreferrer'
+      >
+        GitHub
+      </a>
     </header>
     <Station />
     <LedgerTerra />

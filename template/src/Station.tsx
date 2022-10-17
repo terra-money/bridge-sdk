@@ -1,10 +1,10 @@
-import { StationWallet, ChainType } from '@terra-money/bridge-sdk'
+import { StationWallet, ChainType, BridgeType } from '@terra-money/bridge-sdk'
 import { useState } from 'react'
 
 export default function Station() {
   const [address, setAddress] = useState<string | undefined>()
   const [balance, setBalance] = useState<number>(0)
-  const wallet = new StationWallet()
+  const [wallet] = useState(new StationWallet())
 
   return (
     <section>

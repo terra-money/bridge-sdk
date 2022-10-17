@@ -1,11 +1,16 @@
-import { KeplrWallet, ChainType } from '@terra-money/bridge-sdk'
+import {
+  KeplrWallet,
+  ChainType,
+  BridgeType,
+  Wallet,
+} from '@terra-money/bridge-sdk'
 import { useState } from 'react'
 
 export default function Keplr() {
   const [address, setAddress] = useState<string | undefined>()
   const [balance, setBalance] = useState<number>(0)
   const [chain, setChain] = useState<ChainType | undefined>()
-  const wallet = new KeplrWallet()
+  const [wallet] = useState<Wallet>(new KeplrWallet())
 
   return (
     <section>
@@ -38,6 +43,8 @@ export default function Keplr() {
           <p>
             Balance: {balance} {chain === ChainType.osmosis && 'uosmo'}
             {chain === ChainType.cosmos && 'uatom'}
+            {chain === ChainType.kujira && 'ukuji'}
+            {chain === ChainType.juno && 'ujuno'}
           </p>
         </>
       ) : (
@@ -68,6 +75,30 @@ export default function Keplr() {
             }}
           >
             Connect Cosmos
+          </button>
+          <button
+            onClick={async () => {
+              setChain(ChainType.juno)
+              setAddress((await wallet.connect(ChainType.juno)).address)
+              const balResult = await wallet.getBalance('ujuno')
+              if (balResult.success) {
+                setBalance(balResult.data)
+              }
+            }}
+          >
+            Connect Juno
+          </button>
+          <button
+            onClick={async () => {
+              setChain(ChainType.kujira)
+              setAddress((await wallet.connect(ChainType.kujira)).address)
+              const balResult = await wallet.getBalance('ukuji')
+              if (balResult.success) {
+                setBalance(balResult.data)
+              }
+            }}
+          >
+            Connect Kujira
           </button>
         </>
       )}
