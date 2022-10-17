@@ -47,8 +47,6 @@ export const ics20Channels: PartialRecord<
     channels: PartialRecord<ChainType, { origin: string; counterparty: string }>
   }
 > = {
-  // this is the configuration for CW20 coins with origin terra
-  // it is best to have a single contract for all cw20 tokens
   [ChainType.terra]: {
     contract:
       'terra1e0mrzy8077druuu42vs0hu7ugguade0cj65dgtauyaw4gsl4kv0qtdf2au',
@@ -77,27 +75,3 @@ export const ics20Channels: PartialRecord<
     },
   },
 }
-
-// export enum Token {
-//   ampLUNA,
-//   ampJUNO
-// }
-
-// export const cw20Tokens: {
-//   [ChainType.terra]: {
-//     [Token.ampLUNA]: {
-//       cw20: 'terra1ecgazyd0waaj3g7l9cmy5gulhxkps2gmxu9ghducvuypjq68mq2s5lvsct',
-//       logo: '',
-//       name: '',
-//       symbol: '',
-//       chain: {
-//         [ChainType.osmosis]: 'ibc/3CB43B244957F7CB0A8C0C7F81ADEA524A2AC57E48716B6F8F781286D96830D2'
-//       }
-//     }
-//   },
-//   [ChainType.juno] : {
-//     [Token.ampJUNO]: {
-
-//     }
-//   }
-// }

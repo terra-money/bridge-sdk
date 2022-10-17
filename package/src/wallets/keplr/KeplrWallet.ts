@@ -271,13 +271,11 @@ export class KeplrWallet implements Wallet {
       msgs,
       {
         amount: [],
-        // this is not good
         gas: '250000',
-        // gas: '150000',
       },
       '', // memo
       {
-        chainId: await this.signer.getChainId(),
+        chainId: chainIDs[this.chain],
         accountNumber: account.accountNumber,
         sequence: account.sequence,
       },

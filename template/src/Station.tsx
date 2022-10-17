@@ -1,6 +1,5 @@
 import { StationWallet, ChainType, BridgeType } from '@terra-money/bridge-sdk'
 import { useState } from 'react'
-import SendToken from './SendToken'
 
 export default function Station() {
   const [address, setAddress] = useState<string | undefined>()
@@ -36,14 +35,6 @@ export default function Station() {
             <b>{address}</b>
           </p>
           <p>Balance: {balance} uluna</p>
-
-          {
-            <SendToken
-              wallet={wallet}
-              fromChain={ChainType.terra}
-              bridge={BridgeType.ics20}
-            ></SendToken>
-          }
         </>
       ) : (
         <>

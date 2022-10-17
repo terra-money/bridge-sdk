@@ -5,7 +5,6 @@ import {
   Wallet,
 } from '@terra-money/bridge-sdk'
 import { useState } from 'react'
-import SendToken from './SendToken'
 
 export default function Keplr() {
   const [address, setAddress] = useState<string | undefined>()
@@ -47,13 +46,6 @@ export default function Keplr() {
             {chain === ChainType.kujira && 'ukuji'}
             {chain === ChainType.juno && 'ujuno'}
           </p>
-          {!!chain && (
-            <SendToken
-              wallet={wallet}
-              fromChain={chain}
-              bridge={BridgeType.ics20}
-            ></SendToken>
-          )}
         </>
       ) : (
         <>
