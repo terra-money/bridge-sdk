@@ -167,11 +167,6 @@ export class StationWallet implements Wallet {
             })
           ).payload as any
 
-          console.log(
-            '🚀 ~ file: StationWallet.ts ~ line 170 ~ StationWallet ~ transfer ~ ibcRes',
-            ibcRes,
-          )
-
           return {
             success: ibcRes.success,
             txhash: ibcRes.result?.txhash,
@@ -218,12 +213,7 @@ export class StationWallet implements Wallet {
               msgs: icsTx.msgs.map((a) => a.toJSON(isClassic)),
             })
           ).payload as any
-
-          console.log(
-            '🚀 ~ file: StationWallet.ts ~ line 218 ~ StationWallet ~ transfer ~ icsRes',
-            icsRes,
-          )
-
+          
           return {
             success: icsRes.success,
             txhash: icsRes.result?.txhash,
